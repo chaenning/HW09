@@ -7,6 +7,7 @@
 #include "CEPlayerController.generated.h"
 
 class UCEChatInput;
+class UUserWidget;
 
 UCLASS()
 class CHATCE_API ACEPlayerController : public APlayerController
@@ -14,6 +15,8 @@ class CHATCE_API ACEPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 public:
+	ACEPlayerController();
+	
 	virtual void BeginPlay() override;
 
 	void SetChatMessageString(const FString& InChatMessageString);
@@ -25,7 +28,8 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerRPCPrintChatMessageString(const FString& InChatMessageString);
-	
+
+	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UCEChatInput> ChatInputWidgetClass;
@@ -33,4 +37,14 @@ protected:
 	TObjectPtr<UCEChatInput> ChatInputWidgetInstance;
 
 	FString ChatMessageString;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<UUserWidget> NotificationTextWidgetClass;
+	
+	UPROPERTY()
+	TObjectPtr<UUserWidget> NotificationTextWidgetInstance;
+
+public:
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	FText NotificationText;
 };

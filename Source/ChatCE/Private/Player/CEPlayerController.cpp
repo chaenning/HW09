@@ -2,8 +2,17 @@
 
 #include "EngineUtils.h"
 #include "ChatCE/ChatCE.h"
+#include "Game/CEGameModeBase.h"
+#include "Kismet/GameplayStatics.h"
 #include "UI/CEChatInput.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "Net/UnrealNetwork.h"
+#include "Player/CEPlayerState.h"
+
+ACEPlayerController::ACEPlayerController()
+{
+	bReplicates = true;
+}
 
 void ACEPlayerController::BeginPlay()
 {
@@ -25,6 +34,15 @@ void ACEPlayerController::BeginPlay()
 			ChatInputWidgetInstance->AddToViewport();
 		}
 	}
+
+	if (IsValid(NotificationTextWidgetClass) == true)
+	{
+		NotificationTextWidgetInstance = CreateWidget<UUserWidget>(this, NotificationTextWidgetClass);
+		if (IsValid(NotificationTextWidgetInstance) == true)
+		{
+			NotificationTextWidgetInstance->AddToViewport();
+		}
+	}
 }
 
 void ACEPlayerController::SetChatMessageString(const FString& InChatMessageString)
@@ -34,7 +52,15 @@ void ACEPlayerController::SetChatMessageString(const FString& InChatMessageStrin
 	//PrintChatMessageString(ChatMessageString);
 	if (IsLocalController() == true)
 	{
-		ServerRPCPrintChatMessageString(InChatMessageString);		
+		//ServerRPCPrintChatMessageString(InChatMessageString);
+		ACEPlayerState* CEPS = GetPlayerState<ACEPlayerState>();
+		if (IsValid(CEPS) == true)
+		{
+			//FString CombinedMessageString = CEPS->PlayerNameString + TEXT(": ") + InChatMessageString;
+			FString CombinedMessageString = CEPS->GetPlayerInfoString() + TEXT(": ") + InChatMessageString;
+			ServerRPCPrintChatMessageString(CombinedMessageString);
+		}
+		
 	}	
 }
 
@@ -49,14 +75,31 @@ void ACEPlayerController::PrintChatMessageString(const FString& InChatMessageStr
 	ChatCEFunctionLibrary::MyPrintString(this, InChatMessageString, 10.f);
 }
 
+void ACEPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, NotificationText);
+}
+
 void ACEPlayerController::ServerRPCPrintChatMessageString_Implementation(const FString& InChatMessageString)
 {
-	for (TActorIterator<ACEPlayerController> It(GetWorld()); It; ++It)
+	/*for (TActorIterator<ACEPlayerController> It(GetWorld()); It; ++It)
 	{
 		ACEPlayerController* CEPlayerController = *It;
 		if (IsValid(CEPlayerController) == true)
 		{
 			CEPlayerController->ClientRPCPrintChatMessageString(InChatMessageString);
+		}
+	}*/
+	
+	AGameModeBase* GM = UGameplayStatics::GetGameMode(this);
+	if (IsValid(GM) == true)
+	{
+		ACEGameModeBase* CEGM = Cast<ACEGameModeBase>(GM);
+		if (IsValid(CEGM) == true)
+		{
+			CEGM->PrintChatMessageString(this, InChatMessageString);
 		}
 	}
 }
