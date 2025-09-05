@@ -1,5 +1,6 @@
 #include "Player/CEPlayerController.h"
 
+#include "EngineUtils.h"
 #include "ChatCE/ChatCE.h"
 #include "UI/CEChatInput.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -30,7 +31,11 @@ void ACEPlayerController::SetChatMessageString(const FString& InChatMessageStrin
 {
 	ChatMessageString = InChatMessageString;
 
-	PrintChatMessageString(ChatMessageString);
+	//PrintChatMessageString(ChatMessageString);
+	if (IsLocalController() == true)
+	{
+		ServerRPCPrintChatMessageString(InChatMessageString);		
+	}	
 }
 
 void ACEPlayerController::PrintChatMessageString(const FString& InChatMessageString)
@@ -42,4 +47,21 @@ void ACEPlayerController::PrintChatMessageString(const FString& InChatMessageStr
 	ChatCEFunctionLibrary::MyPrintString(this, CombinedMessageString, 10.f);*/
 
 	ChatCEFunctionLibrary::MyPrintString(this, InChatMessageString, 10.f);
+}
+
+void ACEPlayerController::ServerRPCPrintChatMessageString_Implementation(const FString& InChatMessageString)
+{
+	for (TActorIterator<ACEPlayerController> It(GetWorld()); It; ++It)
+	{
+		ACEPlayerController* CEPlayerController = *It;
+		if (IsValid(CEPlayerController) == true)
+		{
+			CEPlayerController->ClientRPCPrintChatMessageString(InChatMessageString);
+		}
+	}
+}
+
+void ACEPlayerController::ClientRPCPrintChatMessageString_Implementation(const FString& InChatMessageString)
+{
+	PrintChatMessageString(InChatMessageString);
 }
