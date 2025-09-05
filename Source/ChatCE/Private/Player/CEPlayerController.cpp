@@ -59,8 +59,7 @@ void ACEPlayerController::SetChatMessageString(const FString& InChatMessageStrin
 			//FString CombinedMessageString = CEPS->PlayerNameString + TEXT(": ") + InChatMessageString;
 			FString CombinedMessageString = CEPS->GetPlayerInfoString() + TEXT(": ") + InChatMessageString;
 			ServerRPCPrintChatMessageString(CombinedMessageString);
-		}
-		
+		}		
 	}	
 }
 

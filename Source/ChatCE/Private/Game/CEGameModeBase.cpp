@@ -139,17 +139,29 @@ void ACEGameModeBase::PrintChatMessageString(ACEPlayerController* InChattingPlay
 	int Index = InChatMessageString.Len() - 3;
 	FString GuessNumberString = InChatMessageString.RightChop(Index);
 	if (IsGuessNumberString(GuessNumberString) == true)
-	{
-		FString JudgeResultString = JudgeResult(SecretNumberString, GuessNumberString);
-		
+	{		
 		IncreaseGuessCount(InChattingPlayerController);
+
+		// 새로운 카운트로 메시지 다시 구성
+		ACEPlayerState* CEPS = InChattingPlayerController->GetPlayerState<ACEPlayerState>();
+		FString NewChatMessage;
+		if (IsValid(CEPS))
+		{
+			NewChatMessage = CEPS->GetPlayerInfoString() + TEXT(": ") + GuessNumberString;
+		}
+		else
+		{
+			NewChatMessage = InChatMessageString;
+		}
 		
+		FString JudgeResultString = JudgeResult(SecretNumberString, GuessNumberString);
+        
 		for (TActorIterator<ACEPlayerController> It(GetWorld()); It; ++It)
 		{
 			ACEPlayerController* CEPlayerController = *It;
 			if (IsValid(CEPlayerController) == true)
 			{
-				FString CombinedMessageString = InChatMessageString + TEXT(" -> ") + JudgeResultString;
+				FString CombinedMessageString = NewChatMessage + TEXT(" -> ") + JudgeResultString;
 				CEPlayerController->ClientRPCPrintChatMessageString(CombinedMessageString);
 
 				int32 StrikeCount = FCString::Atoi(*JudgeResultString.Left(1));
